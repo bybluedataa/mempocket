@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --apple-blue: #007AFF;
+  --apple-gray-50: #F5F5F7;
+  --apple-gray-100: #E8E8ED;
+  --apple-gray-200: #D2D2D7;
+  --apple-gray-500: #636366;
+  --apple-gray-900: #1C1C1E;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #F5F5F7;
+  color: #1C1C1E;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D2D2D7;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #AEAEB2;
+}
+
+/* Entity badges */
+.badge-project {
+  @apply bg-blue-100 text-blue-700;
+}
+
+.badge-library {
+  @apply bg-purple-100 text-purple-700;
+}
+
+.badge-people {
+  @apply bg-green-100 text-green-700;
+}
+
+.badge-work {
+  @apply bg-orange-100 text-orange-700;
+}
+
+.badge-life {
+  @apply bg-pink-100 text-pink-700;
+}
+
+/* Wiki links in markdown */
+.wiki-link {
+  @apply text-apple-blue hover:underline cursor-pointer;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-apple-md hover:-translate-y-0.5;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-apple-blue text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 active:scale-95 transition-all;
+}
+
+.btn-secondary {
+  @apply bg-apple-gray-100 text-apple-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-apple-gray-200 active:scale-95 transition-all;
+}
+
+.btn-danger {
+  @apply bg-apple-red text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 active:scale-95 transition-all;
+}
+
+/* Input styles */
+.input-field {
+  @apply w-full px-4 py-3 rounded-apple border border-apple-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent;
+}
+
+/* Markdown content styles */
+.markdown-content {
+  @apply prose prose-gray max-w-none;
+}
+
+.markdown-content h1 {
+  @apply text-2xl font-semibold mb-4;
+}
+
+.markdown-content h2 {
+  @apply text-xl font-semibold mb-3;
+}
+
+.markdown-content h3 {
+  @apply text-lg font-semibold mb-2;
+}
+
+.markdown-content p {
+  @apply mb-4 leading-relaxed;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  @apply mb-4 pl-6;
+}
+
+.markdown-content li {
+  @apply mb-1;
+}
+
+.markdown-content code {
+  @apply bg-apple-gray-100 px-1.5 py-0.5 rounded text-sm;
+}
+
+.markdown-content pre {
+  @apply bg-apple-gray-900 text-white p-4 rounded-apple mb-4 overflow-x-auto;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-apple-gray-200 pl-4 italic text-apple-gray-500;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out;
+}

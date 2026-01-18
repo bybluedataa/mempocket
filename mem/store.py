@@ -126,6 +126,29 @@ def delete_entry(entry_id: str) -> bool:
     return False
 
 
+def append_to_entry(entry_id: str, content: str) -> Optional[Entry]:
+    """Append content to an existing entry."""
+    entry = get_entry(entry_id)
+    if not entry:
+        return None
+
+    # Append to existing content
+    if entry.content:
+        entry.content = entry.content + "\n\n" + content
+    else:
+        entry.content = content
+
+    # Update timestamp
+    entry.updated_at = datetime.utcnow()
+
+    # Re-extract links from new content
+    entry.links = extract_links(entry.content)
+
+    # Save
+    save_entry(entry)
+    return entry
+
+
 # ============ Inputs (Inbox) ============
 
 def save_input(inp: Input) -> str:
