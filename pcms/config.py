@@ -77,8 +77,5 @@ def get_index_path() -> Path:
     return get_pcms_home() / "index.json"
 
 
-# Claude model configuration
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
-
 # Link extraction pattern
 LINK_PATTERN = r'\[\[([^\]]+)\]\]'

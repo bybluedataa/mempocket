@@ -222,7 +222,7 @@ def get_run(run_id: str) -> Optional[RunReport]:
 
 def save_index(index: Index) -> None:
     """Save the index."""
-    init_storage()
+    # Don't call init_storage here to avoid recursion
     _save_json(get_index_path(), index.model_dump())
 
 

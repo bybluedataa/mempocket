@@ -1,13 +1,15 @@
-"""Agent pipeline for processing inputs."""
+"""Agent pipeline for processing inputs.
+
+Uses Claude Code CLI for classification (uses your Claude subscription).
+"""
 
 import json
+import subprocess
+import shutil
 from datetime import datetime
 from pathlib import Path
 
-import anthropic
-
 from .config import (
-    CLAUDE_MODEL,
     Entity,
     Context,
     ProposalType,
@@ -82,26 +84,58 @@ def extract_content(inp: Input) -> tuple[str, str]:
 
 def classify_content(content: str) -> ClassificationResult:
     """
-    Use Claude to classify content into entity + context.
+    Use Claude Code CLI to classify content into entity + context.
+    This uses your Claude subscription (no API key needed).
     """
-    client = anthropic.Anthropic()
+    # Check if claude CLI is available
+    claude_path = shutil.which("claude")
+    if not claude_path:
+        return ClassificationResult(
+            entity=Entity.LIBRARY,
+            context=Context.LIFE,
+            confidence=0.5,
+            reason="Claude CLI not found. Install with: npm install -g @anthropic-ai/claude-code",
+            suggested_title=content[:50],
+        )
 
     prompt = CLASSIFICATION_PROMPT.format(content=content[:2000])
 
-    message = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=500,
-        messages=[{"role": "user", "content": prompt}],
-    )
-
-    response_text = message.content[0].text.strip()
-
-    # Parse JSON response
     try:
+        # Use claude CLI with --print flag for non-interactive output
+        result = subprocess.run(
+            [claude_path, "-p", prompt, "--output-format", "text"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode != 0:
+            return ClassificationResult(
+                entity=Entity.LIBRARY,
+                context=Context.LIFE,
+                confidence=0.5,
+                reason=f"Claude CLI error: {result.stderr[:100]}",
+                suggested_title=content[:50],
+            )
+
+        response_text = result.stdout.strip()
+
+        # Parse JSON response
         # Handle potential markdown code blocks
-        if response_text.startswith("```"):
-            lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])
+        if "```json" in response_text:
+            start = response_text.find("```json") + 7
+            end = response_text.find("```", start)
+            response_text = response_text[start:end].strip()
+        elif "```" in response_text:
+            start = response_text.find("```") + 3
+            end = response_text.find("```", start)
+            response_text = response_text[start:end].strip()
+
+        # Try to find JSON object in response
+        json_start = response_text.find("{")
+        json_end = response_text.rfind("}") + 1
+        if json_start >= 0 and json_end > json_start:
+            response_text = response_text[json_start:json_end]
 
         data = json.loads(response_text)
         return ClassificationResult(
@@ -110,6 +144,15 @@ def classify_content(content: str) -> ClassificationResult:
             confidence=float(data.get("confidence", 0.8)),
             reason=data.get("reason", ""),
             suggested_title=data.get("suggested_title"),
+        )
+
+    except subprocess.TimeoutExpired:
+        return ClassificationResult(
+            entity=Entity.LIBRARY,
+            context=Context.LIFE,
+            confidence=0.5,
+            reason="Classification timed out",
+            suggested_title=content[:50],
         )
     except (json.JSONDecodeError, KeyError, ValueError) as e:
         # Default fallback

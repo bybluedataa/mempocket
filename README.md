@@ -99,7 +99,11 @@ All data is stored in `~/.pcms/` (override with `PCMS_HOME` env var):
 ## Requirements
 
 - Python 3.11+
-- Anthropic API key (set `ANTHROPIC_API_KEY` env var)
+- Claude Code CLI (uses your Claude subscription - no API key needed)
+  ```bash
+  npm install -g @anthropic-ai/claude-code
+  claude login
+  ```
 
 ## Development
 
