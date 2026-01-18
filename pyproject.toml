@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mempocket"
+version = "0.1.0"
+description = "A lightweight personal context memory system"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "everlasting" }
+]
+dependencies = [
+    "anthropic>=0.40.0",
+    "click>=8.1.0",
+    "pydantic>=2.0.0",
+    "python-slugify>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+pcms = "pcms.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pcms"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
