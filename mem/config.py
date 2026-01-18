@@ -1,8 +1,30 @@
 """Configuration and constants for mempocket."""
 
+import json
 import os
 from pathlib import Path
 from enum import Enum
+from typing import Optional
+
+# Global config file location (user's home directory)
+GLOBAL_CONFIG_FILE = Path.home() / ".mempocketrc"
+
+
+def _load_global_config() -> dict:
+    """Load global config from ~/.mempocketrc if it exists."""
+    if GLOBAL_CONFIG_FILE.exists():
+        try:
+            with open(GLOBAL_CONFIG_FILE, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _save_global_config(config: dict) -> None:
+    """Save global config to ~/.mempocketrc."""
+    with open(GLOBAL_CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
 
 
 class Entity(str, Enum):
@@ -55,8 +77,36 @@ class ClaudeMode(str, Enum):
 
 # Storage paths
 def get_mem_home() -> Path:
-    """Get mempocket home directory, respecting MEM_HOME env var."""
-    return Path(os.environ.get("MEM_HOME", Path.home() / ".mempocket"))
+    """Get mempocket home directory.
+
+    Priority:
+    1. MEM_HOME environment variable
+    2. mem_home from ~/.mempocketrc config file
+    3. Default: ~/.mempocket
+    """
+    # Check environment variable first
+    if os.environ.get("MEM_HOME"):
+        return Path(os.environ["MEM_HOME"])
+
+    # Check config file
+    config = _load_global_config()
+    if config.get("mem_home"):
+        return Path(config["mem_home"])
+
+    # Default
+    return Path.home() / ".mempocket"
+
+
+def set_mem_home(path: Path) -> None:
+    """Set mempocket home directory in config file."""
+    config = _load_global_config()
+    config["mem_home"] = str(path.resolve())
+    _save_global_config(config)
+
+
+def is_initialized() -> bool:
+    """Check if mempocket has been initialized."""
+    return GLOBAL_CONFIG_FILE.exists() or get_mem_home().exists()
 
 
 def get_entries_dir() -> Path:

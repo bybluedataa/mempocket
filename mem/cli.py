@@ -8,7 +8,10 @@ from typing import Optional
 
 import click
 
-from .config import Entity, Context, ProposalStatus, get_mem_home, get_claude_mode
+from .config import (
+    Entity, Context, ProposalStatus, get_mem_home, get_claude_mode,
+    set_mem_home, is_initialized, GLOBAL_CONFIG_FILE,
+)
 from .store import (
     init_storage,
     get_entry,
@@ -40,10 +43,73 @@ def cli():
 
     Mode: Set MEM_MODE=api for API key, or MEM_MODE=cli (default) for Claude CLI.
     """
-    init_storage()
+    pass
+
+
+# ============ Init Command ============
+
+@cli.command()
+@click.argument("path", required=False, type=click.Path())
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing config")
+def init(path: Optional[str], force: bool):
+    """Initialize mempocket with a custom data directory.
+
+    If PATH is not provided, uses ~/.mempocket by default.
+
+    Examples:
+        mem init                          # Use default ~/.mempocket
+        mem init ~/Documents/mempocket   # Use custom path
+        mem init ./data                   # Use relative path (converted to absolute)
+    """
+    from pathlib import Path as PathLib
+
+    # Determine the path
+    if path:
+        mem_home = PathLib(path).expanduser().resolve()
+    else:
+        mem_home = PathLib.home() / ".mempocket"
+
+    # Check if already initialized
+    if not force and GLOBAL_CONFIG_FILE.exists():
+        current = get_mem_home()
+        click.echo(f"mempocket already initialized at: {current}")
+        click.echo(f"Config file: {GLOBAL_CONFIG_FILE}")
+        click.echo()
+        if click.confirm("Do you want to change the data directory?"):
+            pass  # Continue with init
+        else:
+            return
+
+    # Create directory structure
+    click.echo(f"Initializing mempocket at: {mem_home}")
+
+    dirs = ["entries", "inbox", "proposals", "runs"]
+    for d in dirs:
+        (mem_home / d).mkdir(parents=True, exist_ok=True)
+        click.echo(f"  Created {d}/")
+
+    # Create index file
+    index_file = mem_home / "index.json"
+    if not index_file.exists():
+        with open(index_file, "w") as f:
+            json.dump({"links": {}, "backlinks": {}}, f)
+        click.echo("  Created index.json")
+
+    # Save config
+    set_mem_home(mem_home)
+    click.echo(f"  Saved config to {GLOBAL_CONFIG_FILE}")
+
+    click.echo()
+    click.echo("Done! You can now use mempocket:")
+    click.echo("  mem add \"Your first note\"")
+    click.echo("  mem status")
 
 
 # ============ Quick Add Commands ============
+
+def _ensure_initialized():
+    """Ensure storage is initialized before running commands."""
+    init_storage()
 
 @cli.command()
 @click.argument("content", required=False)
@@ -55,6 +121,7 @@ def add(content: Optional[str], file_path: Optional[str]):
         mem add "Meeting with Alice about Q2 launch"
         mem add --file ./notes.md
     """
+    _ensure_initialized()
     if file_path:
         result = add_file_input(file_path)
     elif content:
@@ -94,6 +161,7 @@ def new(title: str, entity: Optional[str], context: Optional[str], content: str)
         mem new "Dr. Chen" --people --life
         mem new "ReactJS Notes" --library --work -c "Notes about React..."
     """
+    _ensure_initialized()
     if not entity:
         click.echo("Error: Specify --project, --library, or --people", err=True)
         return
@@ -123,6 +191,7 @@ def new(title: str, entity: Optional[str], context: Optional[str], content: str)
 @cli.command()
 def pending():
     """List all pending proposals."""
+    _ensure_initialized()
     proposals = get_pending_proposals()
 
     if not proposals:
@@ -149,6 +218,7 @@ def pending():
 @click.argument("proposal_id")
 def show(proposal_id: str):
     """Show proposal details."""
+    _ensure_initialized()
     proposal = get_proposal(proposal_id)
 
     if not proposal:
@@ -183,6 +253,7 @@ def show(proposal_id: str):
 @click.argument("proposal_id")
 def approve(proposal_id: str):
     """Approve a proposal and create the entry."""
+    _ensure_initialized()
     entry_id = approve_proposal(proposal_id)
 
     if entry_id:
@@ -196,6 +267,7 @@ def approve(proposal_id: str):
 @click.argument("reason", default="")
 def reject(proposal_id: str, reason: str):
     """Reject a proposal."""
+    _ensure_initialized()
     proposal = update_proposal_status(proposal_id, ProposalStatus.REJECTED)
 
     if proposal:
@@ -208,6 +280,7 @@ def reject(proposal_id: str, reason: str):
 @click.argument("run_id")
 def run(run_id: str):
     """Show pipeline run details."""
+    _ensure_initialized()
     report = get_run(run_id)
 
     if not report:
@@ -246,6 +319,7 @@ def search(query: str, entity: Optional[str], context: Optional[str]):
         mem search "Alice"
         mem search "Q2 deadline" --project --work
     """
+    _ensure_initialized()
     entity_enum = Entity(entity) if entity else None
     context_enum = Context(context) if context else None
 
@@ -273,6 +347,7 @@ def list_cmd(entity: Optional[str], context: Optional[str]):
         mem list --project --work
         mem list --people
     """
+    _ensure_initialized()
     entity_enum = Entity(entity) if entity else None
     context_enum = Context(context) if context else None
 
@@ -293,6 +368,7 @@ def get(entry_id: str):
 
     The entry_id can be the full ID or a partial title match.
     """
+    _ensure_initialized()
     entry = get_entry(entry_id)
     if not entry:
         entry = find_entry_by_title(entry_id)
@@ -325,6 +401,7 @@ def append(entry_id: str, content: str):
     Example:
         mem append abc123 "New update: deadline moved to 15/07"
     """
+    _ensure_initialized()
     entry = get_entry(entry_id)
     if not entry:
         entry = find_entry_by_title(entry_id)
@@ -351,6 +428,7 @@ def append(entry_id: str, content: str):
 @click.argument("entry_id")
 def edit(entry_id: str):
     """Edit an entry in $EDITOR."""
+    _ensure_initialized()
     entry = get_entry(entry_id)
     if not entry:
         entry = find_entry_by_title(entry_id)
@@ -402,6 +480,7 @@ def edit(entry_id: str):
 @click.argument("entry_id")
 def links(entry_id: str):
     """Show what this entry links to."""
+    _ensure_initialized()
     entry = get_entry(entry_id)
     if not entry:
         entry = find_entry_by_title(entry_id)
@@ -428,6 +507,7 @@ def links(entry_id: str):
 @click.argument("entry_id")
 def backlinks(entry_id: str):
     """Show what links TO this entry."""
+    _ensure_initialized()
     entry = get_entry(entry_id)
     if not entry:
         entry = find_entry_by_title(entry_id)
@@ -453,6 +533,7 @@ def backlinks(entry_id: str):
 @cli.command()
 def status():
     """Show system status."""
+    _ensure_initialized()
     stats = get_system_status()
     mode = get_claude_mode()
 
@@ -477,6 +558,7 @@ def status():
 @cli.command()
 def reindex():
     """Rebuild the index."""
+    _ensure_initialized()
     index = rebuild_index()
     click.echo(f"✓ Index rebuilt")
     click.echo(f"  Links: {len(index.links)} entries with outgoing links")

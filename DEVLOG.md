@@ -154,6 +154,42 @@ Run `git status` to see:
 
 ---
 
+## 2026-01-18: Add `mem init` Command
+
+### Task
+
+Allow users to configure the data folder location from the start.
+
+### Solution
+
+Added `mem init` command to initialize mempocket with a custom data directory.
+
+### Changes
+
+**`mem/config.py`**:
+- Added `~/.mempocketrc` config file support
+- `get_mem_home()` now checks: env var → config file → default
+- Added `set_mem_home()` and `is_initialized()` functions
+
+**`mem/cli.py`**:
+- Added `mem init [PATH]` command
+- Added `--force` flag to overwrite existing config
+- All commands now call `_ensure_initialized()` before running
+
+### Usage
+
+```bash
+mem init                          # Default: ~/.mempocket
+mem init ~/Documents/mempocket   # Custom path
+mem init ~/new-path --force      # Change existing config
+```
+
+### Status
+
+**COMPLETE** - Ready to use.
+
+---
+
 ## Previous Commits (for context)
 
 | Commit | Description |

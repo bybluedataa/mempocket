@@ -16,7 +16,11 @@ git clone https://github.com/bybluedataa/mempocket.git
 cd mempocket
 pip install -e .
 
-# 3. Start using it!
+# 3. Initialize (optional: specify custom data folder)
+mem init                          # Default: ~/.mempocket
+mem init ~/Documents/mempocket   # Or use custom path
+
+# 4. Start using it!
 mem new "My First Project" --project --work
 mem add "Meeting with Alice about Q3 budget planning"
 mem pending
@@ -32,11 +36,14 @@ git clone https://github.com/bybluedataa/mempocket.git
 cd mempocket
 pip install -e .
 
-# 2. Set environment variables
+# 2. Initialize with custom data folder (optional)
+mem init ~/my-notes
+
+# 3. Set environment variables
 export MEM_MODE=api
 export ANTHROPIC_API_KEY=sk-ant-...
 
-# 3. Start using it!
+# 4. Start using it!
 mem add "Meeting with Alice about Q3 budget planning"
 ```
 
@@ -169,6 +176,21 @@ open http://localhost:3000
 
 ## Configuration
 
+### Initialize Data Directory
+
+```bash
+# Initialize with default location (~/.mempocket)
+mem init
+
+# Initialize with custom location
+mem init ~/Documents/my-notes
+
+# Re-initialize with new location (use --force)
+mem init ~/new-location --force
+```
+
+The configuration is saved to `~/.mempocketrc`.
+
 ### Two Modes for AI Classification
 
 | Mode | How to Enable | Description |
@@ -180,9 +202,16 @@ open http://localhost:3000
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MEM_HOME` | Data storage directory | `~/.mempocket` |
+| `MEM_HOME` | Data storage directory (overrides config file) | `~/.mempocket` |
 | `MEM_MODE` | `cli` for Claude CLI, `api` for API key | `cli` |
 | `ANTHROPIC_API_KEY` | API key (required if MEM_MODE=api) | - |
+
+### Configuration Priority
+
+Data directory is determined in this order:
+1. `MEM_HOME` environment variable (highest priority)
+2. `mem_home` in `~/.mempocketrc` config file
+3. Default: `~/.mempocket`
 
 ## Data Storage
 
