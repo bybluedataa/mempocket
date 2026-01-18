@@ -2,6 +2,62 @@
 
 A lightweight personal context memory system: 3 boxes for everything, 2 modes for life.
 
+## Quick Start
+
+### Option 1: Using Claude CLI (Recommended - No API Key Needed)
+
+```bash
+# 1. Install Claude Code CLI and login
+npm install -g @anthropic-ai/claude-code
+claude login
+
+# 2. Clone and install mempocket
+git clone https://github.com/bybluedataa/mempocket.git
+cd mempocket
+pip install -e .
+
+# 3. Start using it!
+mem new "My First Project" --project --work
+mem add "Meeting with Alice about Q3 budget planning"
+mem pending
+mem approve <proposal_id>
+mem list
+```
+
+### Option 2: Using Anthropic API Key
+
+```bash
+# 1. Clone and install mempocket
+git clone https://github.com/bybluedataa/mempocket.git
+cd mempocket
+pip install -e .
+
+# 2. Set environment variables
+export MEM_MODE=api
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# 3. Start using it!
+mem add "Meeting with Alice about Q3 budget planning"
+```
+
+### Verify Installation
+
+```bash
+mem status
+```
+
+You should see:
+```
+mempocket Status
+  Home: /Users/you/.mempocket
+  Mode: cli (set MEM_MODE to change)
+
+Total entries: 0
+...
+```
+
+---
+
 ## Core Philosophy
 
 - **Don't over-categorize**: Only split when you actually need to
@@ -26,40 +82,6 @@ A lightweight personal context memory system: 3 boxes for everything, 2 modes fo
 |---------|---------------|
 | `@work` | Career, money, profession, colleagues |
 | `@life` | Health, family, hobbies, personal finance |
-
-## Installation
-
-```bash
-pip install -e .
-```
-
-## Configuration
-
-mempocket supports two modes for AI classification:
-
-### Mode 1: Claude CLI (Default)
-Uses your Claude subscription via Claude Code CLI. No API key needed.
-
-```bash
-# Install Claude Code CLI
-npm install -g @anthropic-ai/claude-code
-claude login
-
-# Use mempocket (default mode)
-mem add "Meeting with Alice about Q2 launch"
-```
-
-### Mode 2: Anthropic API
-Uses Anthropic API directly with an API key.
-
-```bash
-# Set environment variables
-export MEM_MODE=api
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Use mempocket
-mem add "Meeting with Alice about Q2 launch"
-```
 
 ## Usage
 
@@ -116,6 +138,23 @@ mem backlinks <entry_id> # Show what links TO this entry
 mem status               # Show system status and current mode
 ```
 
+## Configuration
+
+### Two Modes for AI Classification
+
+| Mode | How to Enable | Description |
+|------|---------------|-------------|
+| **CLI** (default) | `MEM_MODE=cli` or unset | Uses Claude Code CLI with your Claude subscription |
+| **API** | `MEM_MODE=api` | Uses Anthropic API directly (requires `ANTHROPIC_API_KEY`) |
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MEM_HOME` | Data storage directory | `~/.mempocket` |
+| `MEM_MODE` | `cli` for Claude CLI, `api` for API key | `cli` |
+| `ANTHROPIC_API_KEY` | API key (required if MEM_MODE=api) | - |
+
 ## Data Storage
 
 All data is stored in `~/.mempocket/` (override with `MEM_HOME` env var):
@@ -130,20 +169,12 @@ All data is stored in `~/.mempocket/` (override with `MEM_HOME` env var):
 └── index.json         # Derived links index (rebuildable)
 ```
 
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MEM_HOME` | Data storage directory | `~/.mempocket` |
-| `MEM_MODE` | `cli` for Claude CLI, `api` for API key | `cli` |
-| `ANTHROPIC_API_KEY` | API key (required if MEM_MODE=api) | - |
-
 ## Requirements
 
 - Python 3.11+
 - One of:
-  - Claude Code CLI (`npm install -g @anthropic-ai/claude-code`) for CLI mode
-  - Anthropic API key for API mode
+  - **Claude Code CLI** for CLI mode: `npm install -g @anthropic-ai/claude-code`
+  - **Anthropic API key** for API mode
 
 ## Development
 
