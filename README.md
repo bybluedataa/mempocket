@@ -138,6 +138,35 @@ mem backlinks <entry_id> # Show what links TO this entry
 mem status               # Show system status and current mode
 ```
 
+## Web UI
+
+mempocket includes a web-based dashboard for visual management of your entries and proposals.
+
+### Running the Web UI
+
+```bash
+# 1. Install dependencies (first time only)
+pip install -e .
+cd web && npm install && cd ..
+
+# 2. Start the backend API (Terminal 1)
+uvicorn api.main:app --port 8000
+
+# 3. Start the frontend (Terminal 2)
+cd web && npm run dev
+
+# 4. Open in browser
+open http://localhost:3000
+```
+
+### Features
+
+- **Dashboard** - Overview with stats, pending proposals, and recent entries
+- **Entries** - Browse, filter, and manage all entries
+- **Proposals** - Review and approve/reject AI-suggested entries
+- **Quick Add** - Press `Cmd+K` to quickly add new content
+- **Search** - Full-text search across all entries
+
 ## Configuration
 
 ### Two Modes for AI Classification
