@@ -1,4 +1,4 @@
-"""JSON file storage operations for PCMS."""
+"""JSON file storage operations for mempocket."""
 
 import json
 import re
@@ -9,7 +9,7 @@ from typing import Optional
 from slugify import slugify
 
 from .config import (
-    get_pcms_home,
+    get_mem_home,
     get_entries_dir,
     get_inbox_dir,
     get_proposals_dir,
@@ -30,9 +30,9 @@ from .models import (
 
 
 def init_storage() -> None:
-    """Initialize PCMS storage directories."""
+    """Initialize mempocket storage directories."""
     dirs = [
-        get_pcms_home(),
+        get_mem_home(),
         get_entries_dir(),
         get_inbox_dir(),
         get_proposals_dir(),

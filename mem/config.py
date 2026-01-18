@@ -1,4 +1,4 @@
-"""Configuration and constants for PCMS."""
+"""Configuration and constants for mempocket."""
 
 import os
 from pathlib import Path
@@ -47,34 +47,62 @@ class HistoryAction(str, Enum):
     APPENDED = "appended"
 
 
+class ClaudeMode(str, Enum):
+    """Mode for Claude API access."""
+    CLI = "cli"      # Use Claude Code CLI (subscription)
+    API = "api"      # Use Anthropic API key
+
+
 # Storage paths
-def get_pcms_home() -> Path:
-    """Get PCMS home directory, respecting PCMS_HOME env var."""
-    return Path(os.environ.get("PCMS_HOME", Path.home() / ".pcms"))
+def get_mem_home() -> Path:
+    """Get mempocket home directory, respecting MEM_HOME env var."""
+    return Path(os.environ.get("MEM_HOME", Path.home() / ".mempocket"))
 
 
 def get_entries_dir() -> Path:
-    return get_pcms_home() / "entries"
+    return get_mem_home() / "entries"
 
 
 def get_inbox_dir() -> Path:
-    return get_pcms_home() / "inbox"
+    return get_mem_home() / "inbox"
 
 
 def get_proposals_dir() -> Path:
-    return get_pcms_home() / "proposals"
+    return get_mem_home() / "proposals"
 
 
 def get_runs_dir() -> Path:
-    return get_pcms_home() / "runs"
+    return get_mem_home() / "runs"
 
 
 def get_config_path() -> Path:
-    return get_pcms_home() / "config.json"
+    return get_mem_home() / "config.json"
 
 
 def get_index_path() -> Path:
-    return get_pcms_home() / "index.json"
+    return get_mem_home() / "index.json"
+
+
+# Claude configuration
+CLAUDE_MODEL = "claude-sonnet-4-20250514"
+
+
+def get_claude_mode() -> ClaudeMode:
+    """
+    Get Claude mode from environment.
+
+    Set MEM_MODE=api to use Anthropic API key (requires ANTHROPIC_API_KEY)
+    Set MEM_MODE=cli to use Claude Code CLI (default, uses subscription)
+    """
+    mode = os.environ.get("MEM_MODE", "cli").lower()
+    if mode == "api":
+        return ClaudeMode.API
+    return ClaudeMode.CLI
+
+
+def has_api_key() -> bool:
+    """Check if Anthropic API key is available."""
+    return bool(os.environ.get("ANTHROPIC_API_KEY"))
 
 
 # Link extraction pattern

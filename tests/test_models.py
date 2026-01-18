@@ -1,9 +1,9 @@
-"""Tests for PCMS models."""
+"""Tests for mempocket models."""
 
 import pytest
 from datetime import datetime
 
-from pcms.models import (
+from mem.models import (
     Entry,
     Proposal,
     RunReport,
@@ -15,7 +15,7 @@ from pcms.models import (
     PipelineStep,
     generate_entry_id,
 )
-from pcms.config import (
+from mem.config import (
     Entity,
     Context,
     ProposalType,

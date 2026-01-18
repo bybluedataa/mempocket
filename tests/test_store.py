@@ -1,13 +1,13 @@
-"""Tests for PCMS store operations."""
+"""Tests for mempocket store operations."""
 
 import os
 import pytest
 import tempfile
 from pathlib import Path
 
-from pcms.config import Entity, Context, ProposalStatus, ProposalType, InputType
-from pcms.models import Entry, Proposal, Input, SuggestedEntry, Evidence
-from pcms.store import (
+from mem.config import Entity, Context, ProposalStatus, ProposalType, InputType
+from mem.models import Entry, Proposal, Input, SuggestedEntry, Evidence
+from mem.store import (
     init_storage,
     save_entry,
     get_entry,
@@ -28,16 +28,16 @@ from pcms.store import (
 
 
 @pytest.fixture
-def temp_pcms_home(monkeypatch):
-    """Create a temporary PCMS home directory."""
+def temp_mem_home(monkeypatch):
+    """Create a temporary mempocket home directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        monkeypatch.setenv("PCMS_HOME", tmpdir)
+        monkeypatch.setenv("MEM_HOME", tmpdir)
         init_storage()
         yield Path(tmpdir)
 
 
 class TestEntryOperations:
-    def test_save_and_get_entry(self, temp_pcms_home):
+    def test_save_and_get_entry(self, temp_mem_home):
         entry = Entry(
             title="Test Entry",
             entity=Entity.PROJECT,
@@ -51,7 +51,7 @@ class TestEntryOperations:
         assert retrieved.title == "Test Entry"
         assert retrieved.entity == Entity.PROJECT
 
-    def test_list_entries(self, temp_pcms_home):
+    def test_list_entries(self, temp_mem_home):
         # Create multiple entries
         for i in range(3):
             entry = Entry(
@@ -69,7 +69,7 @@ class TestEntryOperations:
         projects = list_entries(entity=Entity.PROJECT)
         assert len(projects) == 2
 
-    def test_search_entries(self, temp_pcms_home):
+    def test_search_entries(self, temp_mem_home):
         entry1 = Entry(
             title="Meeting with Alice",
             entity=Entity.PROJECT,
@@ -94,7 +94,7 @@ class TestEntryOperations:
         results = search_entries("Q2")
         assert len(results) == 1
 
-    def test_delete_entry(self, temp_pcms_home):
+    def test_delete_entry(self, temp_mem_home):
         entry = Entry(
             title="To Delete",
             entity=Entity.LIBRARY,
@@ -107,7 +107,7 @@ class TestEntryOperations:
 
 
 class TestInputOperations:
-    def test_save_and_get_input(self, temp_pcms_home):
+    def test_save_and_get_input(self, temp_mem_home):
         inp = Input(
             type=InputType.TEXT,
             content="Test input content",
@@ -120,7 +120,7 @@ class TestInputOperations:
 
 
 class TestProposalOperations:
-    def test_save_and_get_proposal(self, temp_pcms_home):
+    def test_save_and_get_proposal(self, temp_mem_home):
         suggested = SuggestedEntry(
             title="New Entry",
             entity=Entity.PROJECT,
@@ -144,7 +144,7 @@ class TestProposalOperations:
         assert retrieved is not None
         assert retrieved.status == ProposalStatus.PENDING
 
-    def test_get_pending_proposals(self, temp_pcms_home):
+    def test_get_pending_proposals(self, temp_mem_home):
         for i in range(3):
             suggested = SuggestedEntry(
                 title=f"Entry {i}",
@@ -165,7 +165,7 @@ class TestProposalOperations:
         pending = get_pending_proposals()
         assert len(pending) == 3
 
-    def test_update_proposal_status(self, temp_pcms_home):
+    def test_update_proposal_status(self, temp_mem_home):
         suggested = SuggestedEntry(
             title="Test",
             entity=Entity.PROJECT,
@@ -199,7 +199,7 @@ class TestLinkExtraction:
 
 
 class TestIndex:
-    def test_rebuild_index(self, temp_pcms_home):
+    def test_rebuild_index(self, temp_mem_home):
         # Create entries with links
         alice = Entry(
             title="Alice",
@@ -223,7 +223,7 @@ class TestIndex:
         # Check links
         assert project_id in index.links
 
-    def test_backlinks(self, temp_pcms_home):
+    def test_backlinks(self, temp_mem_home):
         alice = Entry(
             title="Alice",
             entity=Entity.PEOPLE,

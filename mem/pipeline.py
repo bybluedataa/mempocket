@@ -1,6 +1,10 @@
 """Agent pipeline for processing inputs.
 
-Uses Claude Code CLI for classification (uses your Claude subscription).
+Supports two modes:
+- CLI mode: Uses Claude Code CLI (subscription-based, no API key needed)
+- API mode: Uses Anthropic API directly (requires ANTHROPIC_API_KEY)
+
+Set MEM_MODE=api to use API mode, otherwise CLI mode is default.
 """
 
 import json
@@ -14,6 +18,10 @@ from .config import (
     Context,
     ProposalType,
     InputType,
+    ClaudeMode,
+    CLAUDE_MODEL,
+    get_claude_mode,
+    has_api_key,
 )
 from .models import (
     Input,
@@ -82,12 +90,29 @@ def extract_content(inp: Input) -> tuple[str, str]:
     return inp.content, "raw content"
 
 
-def classify_content(content: str) -> ClassificationResult:
-    """
-    Use Claude Code CLI to classify content into entity + context.
-    This uses your Claude subscription (no API key needed).
-    """
-    # Check if claude CLI is available
+def _parse_json_response(response_text: str) -> dict:
+    """Parse JSON from Claude response, handling markdown code blocks."""
+    # Handle potential markdown code blocks
+    if "```json" in response_text:
+        start = response_text.find("```json") + 7
+        end = response_text.find("```", start)
+        response_text = response_text[start:end].strip()
+    elif "```" in response_text:
+        start = response_text.find("```") + 3
+        end = response_text.find("```", start)
+        response_text = response_text[start:end].strip()
+
+    # Try to find JSON object in response
+    json_start = response_text.find("{")
+    json_end = response_text.rfind("}") + 1
+    if json_start >= 0 and json_end > json_start:
+        response_text = response_text[json_start:json_end]
+
+    return json.loads(response_text)
+
+
+def _classify_via_cli(content: str) -> ClassificationResult:
+    """Classify content using Claude Code CLI."""
     claude_path = shutil.which("claude")
     if not claude_path:
         return ClassificationResult(
@@ -101,7 +126,6 @@ def classify_content(content: str) -> ClassificationResult:
     prompt = CLASSIFICATION_PROMPT.format(content=content[:2000])
 
     try:
-        # Use claude CLI with --print flag for non-interactive output
         result = subprocess.run(
             [claude_path, "-p", prompt, "--output-format", "text"],
             capture_output=True,
@@ -118,26 +142,7 @@ def classify_content(content: str) -> ClassificationResult:
                 suggested_title=content[:50],
             )
 
-        response_text = result.stdout.strip()
-
-        # Parse JSON response
-        # Handle potential markdown code blocks
-        if "```json" in response_text:
-            start = response_text.find("```json") + 7
-            end = response_text.find("```", start)
-            response_text = response_text[start:end].strip()
-        elif "```" in response_text:
-            start = response_text.find("```") + 3
-            end = response_text.find("```", start)
-            response_text = response_text[start:end].strip()
-
-        # Try to find JSON object in response
-        json_start = response_text.find("{")
-        json_end = response_text.rfind("}") + 1
-        if json_start >= 0 and json_end > json_start:
-            response_text = response_text[json_start:json_end]
-
-        data = json.loads(response_text)
+        data = _parse_json_response(result.stdout.strip())
         return ClassificationResult(
             entity=Entity(data["entity"]),
             context=Context(data["context"]),
@@ -155,7 +160,6 @@ def classify_content(content: str) -> ClassificationResult:
             suggested_title=content[:50],
         )
     except (json.JSONDecodeError, KeyError, ValueError) as e:
-        # Default fallback
         return ClassificationResult(
             entity=Entity.LIBRARY,
             context=Context.LIFE,
@@ -163,6 +167,72 @@ def classify_content(content: str) -> ClassificationResult:
             reason=f"Classification failed: {e}. Defaulting to library/life.",
             suggested_title=content[:50],
         )
+
+
+def _classify_via_api(content: str) -> ClassificationResult:
+    """Classify content using Anthropic API."""
+    try:
+        import anthropic
+    except ImportError:
+        return ClassificationResult(
+            entity=Entity.LIBRARY,
+            context=Context.LIFE,
+            confidence=0.5,
+            reason="anthropic package not installed. Run: pip install anthropic",
+            suggested_title=content[:50],
+        )
+
+    if not has_api_key():
+        return ClassificationResult(
+            entity=Entity.LIBRARY,
+            context=Context.LIFE,
+            confidence=0.5,
+            reason="ANTHROPIC_API_KEY not set. Set it or use MEM_MODE=cli",
+            suggested_title=content[:50],
+        )
+
+    prompt = CLASSIFICATION_PROMPT.format(content=content[:2000])
+
+    try:
+        client = anthropic.Anthropic()
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        data = _parse_json_response(message.content[0].text.strip())
+        return ClassificationResult(
+            entity=Entity(data["entity"]),
+            context=Context(data["context"]),
+            confidence=float(data.get("confidence", 0.8)),
+            reason=data.get("reason", ""),
+            suggested_title=data.get("suggested_title"),
+        )
+
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        return ClassificationResult(
+            entity=Entity.LIBRARY,
+            context=Context.LIFE,
+            confidence=0.5,
+            reason=f"Classification failed: {e}. Defaulting to library/life.",
+            suggested_title=content[:50],
+        )
+
+
+def classify_content(content: str) -> ClassificationResult:
+    """
+    Classify content into entity + context using Claude.
+
+    Uses CLI mode by default (Claude Code subscription).
+    Set MEM_MODE=api to use Anthropic API key instead.
+    """
+    mode = get_claude_mode()
+
+    if mode == ClaudeMode.API:
+        return _classify_via_api(content)
+    else:
+        return _classify_via_cli(content)
 
 
 def detect_links(content: str) -> list[str]:

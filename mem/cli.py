@@ -1,4 +1,4 @@
-"""CLI interface for PCMS."""
+"""CLI interface for mempocket."""
 
 import json
 import os
@@ -8,7 +8,7 @@ from typing import Optional
 
 import click
 
-from .config import Entity, Context, ProposalStatus, get_pcms_home
+from .config import Entity, Context, ProposalStatus, get_mem_home, get_claude_mode
 from .store import (
     init_storage,
     get_entry,
@@ -32,11 +32,13 @@ from .tools import approve as approve_proposal
 
 
 @click.group()
-@click.version_option(version="0.1.0", prog_name="pcms")
+@click.version_option(version="0.1.0", prog_name="mem")
 def cli():
-    """PCMS - Personal Context Memory System
+    """mem - Personal Context Memory System
 
     A lightweight personal context system: 3 boxes for everything, 2 modes for life.
+
+    Mode: Set MEM_MODE=api for API key, or MEM_MODE=cli (default) for Claude CLI.
     """
     init_storage()
 
@@ -50,8 +52,8 @@ def add(content: Optional[str], file_path: Optional[str]):
     """Quick add - agent classifies automatically.
 
     Examples:
-        pcms add "Meeting with Alice about Q2 launch"
-        pcms add --file ./notes.md
+        mem add "Meeting with Alice about Q2 launch"
+        mem add --file ./notes.md
     """
     if file_path:
         result = add_file_input(file_path)
@@ -71,7 +73,7 @@ def add(content: Optional[str], file_path: Optional[str]):
 
     if result.get("proposals"):
         click.echo(f"  → Created proposal {result['proposals'][0]}")
-        click.echo("\nRun 'pcms pending' to review")
+        click.echo("\nRun 'mem pending' to review")
 
 
 # ============ Manual Add Commands ============
@@ -88,9 +90,9 @@ def new(title: str, entity: Optional[str], context: Optional[str], content: str)
     """Manually create an entry with explicit classification.
 
     Examples:
-        pcms new "Launch App Q2" --project --work
-        pcms new "Dr. Chen" --people --life
-        pcms new "ReactJS Notes" --library --work -c "Notes about React..."
+        mem new "Launch App Q2" --project --work
+        mem new "Dr. Chen" --people --life
+        mem new "ReactJS Notes" --library --work -c "Notes about React..."
     """
     if not entity:
         click.echo("Error: Specify --project, --library, or --people", err=True)
@@ -241,8 +243,8 @@ def search(query: str, entity: Optional[str], context: Optional[str]):
     """Search entries by query string.
 
     Examples:
-        pcms search "Alice"
-        pcms search "Q2 deadline" --project --work
+        mem search "Alice"
+        mem search "Q2 deadline" --project --work
     """
     entity_enum = Entity(entity) if entity else None
     context_enum = Context(context) if context else None
@@ -267,9 +269,9 @@ def list_cmd(entity: Optional[str], context: Optional[str]):
     """List entries with optional filters.
 
     Examples:
-        pcms list
-        pcms list --project --work
-        pcms list --people
+        mem list
+        mem list --project --work
+        mem list --people
     """
     entity_enum = Entity(entity) if entity else None
     context_enum = Context(context) if context else None
@@ -321,7 +323,7 @@ def append(entry_id: str, content: str):
     """Append content to an entry.
 
     Example:
-        pcms append abc123 "New update: deadline moved to 15/07"
+        mem append abc123 "New update: deadline moved to 15/07"
     """
     entry = get_entry(entry_id)
     if not entry:
@@ -452,9 +454,11 @@ def backlinks(entry_id: str):
 def status():
     """Show system status."""
     stats = get_system_status()
+    mode = get_claude_mode()
 
-    click.echo("PCMS Status")
-    click.echo(f"  Home: {get_pcms_home()}")
+    click.echo("mempocket Status")
+    click.echo(f"  Home: {get_mem_home()}")
+    click.echo(f"  Mode: {mode.value} (set MEM_MODE to change)")
     click.echo()
     click.echo(f"Total entries: {stats['total_entries']}")
     click.echo()

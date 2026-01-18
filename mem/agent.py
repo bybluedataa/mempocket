@@ -1,7 +1,7 @@
-"""Claude agent orchestrator for PCMS.
+"""Claude agent orchestrator for mempocket.
 
 This module provides the agent interface for processing inputs
-and interacting with the PCMS system.
+and interacting with the mempocket system.
 
 For the MVP, the agent functionality is primarily embedded in the
 pipeline module, which uses Claude for classification.
